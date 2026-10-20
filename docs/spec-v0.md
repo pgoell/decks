@@ -47,26 +47,39 @@ v0 is done when one existing deck from `~/Code/presentations` is rebuilt in deck
 - A slide's block can override a theme token.
 - A preset is a theme with its masters, saved and picked for a new deck. The existing presets in the `presentations` plugin (`extracting-presets`) are the first ones.
 
-### 4. Present
+### 4. Animations
+
+Part of the model from the first version, so no deck has to be rebuilt to gain them. The model follows PowerPoint's, so the pptx export keeps them as native animations.
+
+- **Transitions** between slides: none, fade, push, wipe, zoom; a duration per slide.
+- **Effects** on a block, of four kinds: `in` (appear, fade, fly in, zoom), `emphasis` (pulse, grow, colour change), `out` (the reverse of `in`), `path` (move along an SVG path).
+- **Timing** as in PowerPoint: each effect starts on a `click`, `with` the effect before it, or `after` it, with a duration and a delay. A slide's clicks are its steps.
+- **Parts of a block**: a text or list block plays `by` paragraph, one bullet per click. An effect on an SVG block can target an element inside it by `target` selector, so a diagram builds part by part.
+- **Script blocks** get the slide's step as an event (`deck:step`, with the step number and the direction), so custom JavaScript animation runs in time with the clicks, forwards and backwards.
+- **Editor**: an animation panel per slide lists the effects in order. Drag to reorder, set start, effect, duration and delay, play the slide from any step. Numbered badges on the canvas show which step each block appears on.
+- **Present**: each click plays the next step; back undoes it. The presenter view's preview shows the next step, not only the next slide.
+
+### 5. Present
 
 - Full-screen presenting in the browser.
 - Presenter view with notes, next slide and timer, kept in sync with the audience window, as `presenter.js` does today.
 
-### 5. Export
+### 6. Export
 
-- **HTML**: one self-contained file per deck.
-- **PDF**: headless Chromium prints the same markup the screen shows.
-- **pptx**: typed blocks become native shapes and text boxes; masters become slide layouts; HTML, SVG and script blocks become images.
+- **HTML**: one self-contained file per deck; effects play through the Web Animations API.
+- **PDF**: headless Chromium prints the same markup the screen shows; each slide in its final state, or one page per step.
+- **pptx**: typed blocks become native shapes and text boxes; masters become slide layouts; HTML, SVG and script blocks become images. Transitions and effects on typed blocks become native PowerPoint ones (`<p:transition>`, `<p:timing>`). An effect that targets the inside of an SVG block, and a Script block's own motion, are lost; the export lists each one it drops.
 
-### 6. MCP
+### 7. MCP
 
 - Remote MCP server with OAuth, as Blattomat has.
-- Tools for decks, slides, blocks, themes and masters, all by id.
+- Tools for decks, slides, blocks, animations, themes and masters, all by id.
+- `render_slide` takes a step number, so the agent sees each step of a build.
 - `render_slide` returns a PNG so the agent sees what it built.
 - Each write answers with the problems it finds: overflowing text, overlapping text, text below the type floor (the hard gates H1, H2 and H7 from the `presentations` plugin).
 - Agent docs in the repo, in the OKF format Blattomat uses (`docs/okf/`).
 
-### 7. Storage and accounts
+### 8. Storage and accounts
 
 - Decks saved on the server, automatically after each change.
 - A list of decks with title, date and a thumbnail.
@@ -77,7 +90,7 @@ v0 is done when one existing deck from `~/Code/presentations` is rebuilt in deck
 - Live collaboration, workspaces, version branches (phase 3)
 - Library, search across decks, copy slides between decks (phase 2)
 - Import from pptx, PDF or Excel (phase 2)
-- Animations and slide transitions
+- Drawing a motion path by hand on the canvas (an agent writes the path through MCP; the editor shows it)
 - Mobile editing
 
 ## Architecture
@@ -117,11 +130,20 @@ Lengths in px on a 1920 by 1080 slide, font sizes in px. A 16:9 pptx slide is 12
         { "id": "b_y8", "type": "svg",
           "x": 960, "y": 260, "w": 864, "h": 700, "z": 2, "locked": false,
           "props": { "svg": "<svg viewBox=\"0 0 864 700\">…</svg>" } }
+      ],
+      "transition": { "effect": "fade", "ms": 400 },
+      "animations": [
+        { "id": "a_1", "block": "b_y8", "kind": "in", "effect": "fade",
+          "start": "click", "ms": 500, "delay": 0 },
+        { "id": "a_2", "block": "b_y8", "target": "#arrow-2", "kind": "in", "effect": "wipe",
+          "from": "left", "start": "after", "ms": 300, "delay": 0 }
       ]
     }
   ]
 }
 ```
+
+`animations` is the slide's timeline, in play order. Each effect names its block by id, so moving or restyling a block keeps its effects; deleting a block deletes them.
 
 A block with `slot` fills that placeholder of the slide's master and takes its box from the master unless it sets its own. Themes and masters are documents of their own, named by id, so many decks share one.
 
@@ -141,4 +163,5 @@ Slides and blocks are a list in the JSON, but every operation names them by `id`
 3. How does Slidev (Markdown) let an agent write slides, and is a text form of the deck worth having beside the JSON?
 4. How do Gamma and Pitch let an AI change a deck: whole deck, one slide, one block? What does it do to blocks the user placed by hand?
 5. Which libraries for pptx export and for charts fit, and what are their licenses?
-6. What would live collaboration need from the model now (Yjs, Automerge), so v0 does not block it?
+6. How do PowerPoint (`<p:timing>`), Keynote, Google Slides, reveal.js and Slidev model animations and builds, and which effects survive the trip to pptx and back?
+7. What would live collaboration need from the model now (Yjs, Automerge), so v0 does not block it?

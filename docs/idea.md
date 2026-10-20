@@ -27,6 +27,7 @@ A personal asset first: every future talk is made here. Later maybe a tool Deloi
 - Themes: colours, fonts, spacing as tokens.
 - Slide masters: layouts with placeholders, plus fixed parts such as logo, header, footer and page number.
 - Presets: a theme with its masters, saved and reused; made from a client's PowerPoint template.
+- Animations from the start: slide transitions, builds one click at a time, emphasis, exit and motion paths, timed as in PowerPoint and kept in the pptx export.
 - Ideally everything PowerPoint can do here.
 
 ### Decks and slides
