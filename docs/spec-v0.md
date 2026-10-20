@@ -51,6 +51,7 @@ Three tiers plus a theme, as in PowerPoint and Google Slides, so the pptx export
 - Each slide names one layout. A block with `slot` fills that slot and takes its box from the layout unless it sets its own. Changing the layout changes every slide on it.
 - A slide's block can override a theme token.
 - A preset is a theme with its masters and layouts, saved and picked for a new deck. The presets in the `presentations` plugin (`extracting-presets`) are the first ones.
+- **Masters from and to PowerPoint**: a `.pptx` template comes in as a preset. Its theme becomes the theme's tokens, each master its text styles, fixed blocks and footer trio, and each layout its kind and slots, with the placeholder type and index PowerPoint gave them. decks keeps the template's own master, layout and theme parts, and the pptx export starts from them, so a client template goes back out as PowerPoint wrote it. A change made in decks to a master or layout replaces only what it changes in those parts. Today the `extracting-presets` skill does this import by hand.
 
 ### 4. Animations
 
@@ -104,7 +105,7 @@ The fastest way to tell an agent what to change is to point at it. Modelled on t
 
 - **HTML**: one self-contained file per deck; effects play through the Web Animations API.
 - **PDF**: headless Chromium prints the same markup the screen shows; each slide in its final state, or one page per step.
-- **pptx**: a new exporter, written from the plugin's python-pptx recipes (the plugin has recipes, not exporter code). It starts from a generated base file that holds the deck's masters and layouts, then adds slides with python-pptx. A block in a slot writes an empty shape box, so it inherits its place from the layout.
+- **pptx**: a new exporter, written from the plugin's python-pptx recipes (the plugin has recipes, not exporter code). It starts from a base file that holds the deck's masters and layouts (the imported template's own parts, or parts decks generates for a preset made in decks), then adds slides with python-pptx. A block in a slot writes an empty shape box, so it inherits its place from the layout.
   - Typed blocks become native text boxes, shapes, pictures and tables; a Chart block becomes a native chart from its table.
   - decks writes its own OOXML for what python-pptx cannot: the layouts in the base file, the theme's colour scheme, SVG (a Chromium-made PNG with the SVG beside it, as PowerPoint 2019 and later read it), transitions (ms duration with a speed fallback) and effects (`<p:timing>`).
   - HTML and Script blocks become images. An effect that targets the inside of an SVG block, and a Script block's own motion, are lost; the export lists each one it drops.
@@ -115,7 +116,7 @@ The fastest way to tell an agent what to change is to point at it. Modelled on t
 
 - Remote MCP server with OAuth, as Blattomat has. MCP is the agent's only write path.
 - Tools for decks, slides, blocks, animations, themes, masters, layouts and comments. Every write is an operation that names its target by id and sets single properties; no tool takes a list position.
-- **Locks hold**: a write that would change a locked block is refused, also when it comes as a whole-slide or whole-deck write.
+- **Locks**: a lock asks agents to leave a block alone, and an agent may still lift it. `unlock_block` unlocks one block or every block on a slide, as an operation of its own. A write that changes a locked block without that step first is refused with a hint to unlock, also when it comes as a whole-slide or whole-deck write. The write summary names every unlock, and undo locks the block again. So an agent never moves a locked block by accident, and never has to wait for the user.
 - **Versions**: every deck has a version number. A write names the version it read, and a write on an older version is refused with the current one.
 - **Undo**: each agent write is one undo step for the user, and its answer carries a short summary of what changed. The server keeps a log of operations.
 - `outline` returns, per slide, the title, the text and each block's id and type: a cheap read for agents, read only.
@@ -155,7 +156,7 @@ The code is public; the decks are not. Many decks hold client material.
 
 - Live collaboration, workspaces, version branches (phase 3)
 - Library, search across decks, copy slides between decks (phase 2)
-- Import from pptx, PDF or Excel (phase 2); plugin HTML decks come in from v0, see 10
+- Import of slides from pptx, PDF or Excel (phase 2); masters and layouts from a pptx template come in from v0, see 3; plugin HTML decks from v0, see 10
 - Drawing and bending a motion path by hand on the canvas: planned for v1. In v0 an agent writes the path through MCP and the editor shows and plays it
 - Morph transitions
 - A text form of the deck that can be edited and read back (the scan found no product that keeps one in step with a canvas); `outline` is read only
@@ -234,7 +235,7 @@ Themes, masters and layouts are documents of their own, named by id, so many dec
 
 ## Open items
 
-1. **Layouts in PowerPoint**: generate a pptx from a base file with real layouts, open it in PowerPoint, try Change Layout and Reset. The design in section 3 is a hypothesis until this passes. First test issue.
+1. **Layouts in PowerPoint**: import a template, export a deck built on it, open the file in PowerPoint, try Change Layout and Reset, and compare its masters with the template's. The design in section 3 is a hypothesis until this passes. First test issue. The template in the repo is a made-up one; a real client template is tried on the VPS only.
 2. **Preset ids**: check each effect of section 4 in PowerPoint before it ships.
 3. **python-pptx**: pinned for now; decide to vendor or fork once a bug in it blocks decks.
 4. **Licences**: neither this repo nor Blattomat has a LICENSE file. Choose one for decks, and settle Blattomat's (blattwerk issue #889) before its code moves here.
