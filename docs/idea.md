@@ -56,7 +56,7 @@ A personal asset first: every future talk is made here. Later maybe a tool Deloi
 
 1. **Personal core.** Document model, renderer, canvas editor, raw blocks, themes and masters, MCP, export to HTML, PDF and pptx. Replaces how decks are made today.
 2. **Library.** Many decks, copy slides between them, search, import from pptx and PDF.
-3. **Many people.** Accounts, workspaces, live collaboration (a CRDT such as Yjs), agent branches, hosting by others.
+3. **Many people.** Accounts, workspaces, live collaboration through operations the server orders (a CRDT only if that fails; see the scan), agent branches, hosting by others.
 
 ## Decisions taken now for later phases
 
