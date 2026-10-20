@@ -1,8 +1,8 @@
 # decks v0
 
-Status: draft, before the competitor scan. The scan (in `docs/research/`) answers the open questions at the end; then this spec is settled and turned into issues.
+Status: settled after the competitor scan ([report](research/report.md)). Next step: turn it into issues. The open items at the end stay open until a test or a decision closes them.
 
-A slide editor: a 16:9 canvas like PowerPoint, typed blocks plus raw HTML, SVG and JavaScript blocks, themes and slide masters, MCP tools for agents, and export to HTML, PDF and pptx. It runs in the browser. The wider idea and later phases are in [idea.md](idea.md).
+A slide editor: a 16:9 canvas like PowerPoint, typed blocks plus raw HTML, SVG and JavaScript blocks, themes, slide masters and layouts, MCP tools for agents, and export to HTML, PDF and pptx. It runs in the browser. The wider idea and later phases are in [idea.md](idea.md).
 
 ## Who it is for
 
@@ -10,7 +10,9 @@ One user first: Pascal, who gives talks at Deloitte and to clients. Today an age
 
 ## The test
 
-v0 is done when one existing deck from `~/Code/presentations` is rebuilt in decks, partly by an agent through MCP and partly by hand, and the next talk is given from it, with presenter view, and the pptx export opens in PowerPoint with editable text.
+v0 is done when one existing deck from `~/Code/presentations` is rebuilt in decks, partly by an agent through MCP and partly by hand, and the next talk is given from it, with presenter view. Its pptx export opens in PowerPoint with editable text, and PowerPoint's Change Layout and Reset work on its slides.
+
+The test rests on text, images, shapes, tables, SVG and notes, which cover nearly all of today's content. The existing decks use no PowerPoint timing, no builds, no native charts and almost no placeholders, so animation and chart export get checks of their own in PowerPoint and do not gate the test.
 
 ## Scope
 
@@ -21,7 +23,7 @@ v0 is done when one existing deck from `~/Code/presentations` is rebuilt in deck
 - Snap to the slide's margins and centre and to other blocks' edges and centres, with guide lines while dragging. Own guide lines and an optional grid.
 - Multi-select, copy, paste, duplicate, align, distribute, bring forward, send back.
 - Arrow keys move by 1 px, 10 with Shift.
-- Undo and redo.
+- Undo and redo, for the user's edits and for each agent write.
 - A slide list beside the canvas: reorder, duplicate, delete, hide.
 - Speaker notes per slide.
 
@@ -29,70 +31,101 @@ v0 is done when one existing deck from `~/Code/presentations` is rebuilt in deck
 
 | Block | Settings |
 |---|---|
-| Text | font, size, weight, italic, colour, alignment, line spacing; formatting on part of the text; bulleted and numbered lists with levels |
+| Text | font, size, weight, italic, colour, alignment, line spacing; formatting on part of the text; bulleted and numbered lists with levels. Stored as paragraphs of runs, never as one string |
 | Image | upload, crop, keep ratio |
 | Shape | rectangle, rounded box, circle, line, arrow; fill, border, text inside |
 | Table | rows, columns, text per cell, column widths, head row |
-| Chart | bar, line, pie; data in the block |
+| Chart | bar, line, pie; the data is a table (categories, series, values) in the block |
 | HTML | raw HTML and CSS, drawn inside the block's box |
 | SVG | raw SVG, scaled to the box |
 | Script | HTML plus JavaScript, run in a sandboxed frame inside the box |
 | Placeholder | an empty box with a note, for sketching a layout before it is built |
 
-### 3. Themes and masters
+### 3. Themes, masters and layouts
 
-- A theme holds tokens: colours, fonts, font sizes, spacing.
-- A master is a layout: placeholder boxes (title, body, image) and fixed blocks (logo, footer, page number, date).
-- Each slide names one master. Changing the master changes every slide on it.
+Three tiers plus a theme, as in PowerPoint and Google Slides, so the pptx export gives real layouts.
+
+- **Theme**: twelve colour slots (`dk1`, `lt1`, `dk2`, `lt2`, `accent1` to `accent6`, `hlink`, `folHlink`), a heading and a body font, plus font sizes and spacing. A preset's colour tokens by role map onto the slots.
+- **Master**: text styles by level for title, body and other text; fixed blocks (logo, background); the footer trio of date, footer text and slide number.
+- **Layout**: belongs to one master, has a name and a kind from PowerPoint's list of layout types (title, title and content, two content, section header, blank and the rest), and holds slots. A slot has a role (title, body, picture and the other PowerPoint placeholder types), an index, a box and a prompt.
+- Each slide names one layout. A block with `slot` fills that slot and takes its box from the layout unless it sets its own. Changing the layout changes every slide on it.
 - A slide's block can override a theme token.
-- A preset is a theme with its masters, saved and picked for a new deck. The existing presets in the `presentations` plugin (`extracting-presets`) are the first ones.
+- A preset is a theme with its masters and layouts, saved and picked for a new deck. The presets in the `presentations` plugin (`extracting-presets`) are the first ones.
 
 ### 4. Animations
 
 Part of the model from the first version, so no deck has to be rebuilt to gain them. The model follows PowerPoint's, so the pptx export keeps them as native animations.
 
-- **Transitions** between slides: none, fade, push, wipe, zoom; a duration per slide.
-- **Effects** on a block, of four kinds: `in` (appear, fade, fly in, zoom), `emphasis` (pulse, grow, colour change), `out` (the reverse of `in`), `path` (move along an SVG path).
+- **Transitions** between slides: none, fade, push, wipe, zoom; a duration in ms per slide.
+- **Effects** on a block, of four kinds: `in`, `emphasis`, `out`, `path`. Each effect names one entry of a closed list, and the list holds PowerPoint's preset id for each:
+
+  | Kind | Effect | Preset id |
+  |---|---|---|
+  | in, out | appear | 1 |
+  | in, out | fly | 2 |
+  | in, out | fade | 10 |
+  | in, out | wipe | 22 |
+  | in, out | zoom | 23 |
+  | emphasis | fill colour | 1 |
+  | emphasis | font colour | 3 |
+  | emphasis | grow | 6 |
+  | emphasis | spin | 8 |
+  | emphasis | pulse | 26 |
+  | path | along an SVG path | custom |
+
+  The ids come from LibreOffice's import table and one PowerPoint-saved file; each is checked in PowerPoint before it ships.
+- **Direction**: `from` is top, right, bottom or left (PowerPoint's subtypes 1, 2, 4, 8), or in and out for zoom (16, 32).
 - **Timing** as in PowerPoint: each effect starts on a `click`, `with` the effect before it, or `after` it, with a duration and a delay. A slide's clicks are its steps.
-- **Parts of a block**: a text or list block plays `by` paragraph, one bullet per click. An effect on an SVG block can target an element inside it by `target` selector, so a diagram builds part by part.
+- **Parts of a block**: a text block plays `by: "paragraph"`, one paragraph per click, down to a given list level. An effect on an SVG block can target an element inside it by `target` selector, so a diagram builds part by part.
+- **Playback** is a function of the step number, as in reveal.js and Slidev: the player computes each block's state for step n, so going back is as exact as going forward.
 - **Script blocks** get the slide's step as an event (`deck:step`, with the step number and the direction), so custom JavaScript animation runs in time with the clicks, forwards and backwards.
-- **Editor**: an animation panel per slide lists the effects in order. Drag to reorder, set start, effect, duration and delay, play the slide from any step. Numbered badges on the canvas show which step each block appears on.
+- **Editor**: an animation panel per slide lists the effects in order. Drag to reorder, set start, effect, direction, duration and delay, play the slide from any step. Numbered badges on the canvas show which step each block appears on.
 - **Present**: each click plays the next step; back undoes it. The presenter view's preview shows the next step, not only the next slide.
 
 ### 5. Feedback for agents
 
 The fastest way to tell an agent what to change is to point at it. Modelled on the comments of the current deck editor (`editing-presentations`), but tied to ids instead of source lines, so a comment still finds its block after edits.
 
-- **Comment**: select one or more blocks (or nothing, for the whole slide), type a note. A comment can also name an animation step.
-- **Draw**: a pen on the slide for circles and arrows. A drawing belongs to its comment and never enters the deck.
+- **Comment**: select one or more blocks (or nothing, for the whole slide), type a note. The anchor is the slide id, the block ids, a pin point in fractions of the slide's width and height, and optionally an animation step.
+- **Block deleted**: the thread stays, anchored to its slide at the last pin point.
+- **Draw**: a pen on the slide for circles and arrows. A drawing is vector strokes owned by its comment, shown only in the editor and in screenshots, never in the deck.
 - **Threads**: the agent answers under a comment and marks it done; the user reopens it if the change is wrong.
 - **Selection**: what the user has selected right now is readable by the agent, so "make this bigger" needs no comment at all.
 - **Copy prompt**: all open comments as one markdown prompt on the clipboard, per slide a screenshot path with each commented block boxed and numbered, and per comment the note, the block ids, their type and props. For agents without MCP.
-- **MCP**: `get_selection`, `list_comments` (open ones by default, with a screenshot per slide), `reply_comment`, `resolve_comment`. An agent works through the open comments and resolves each with a reply on what it changed.
+- **MCP**: `get_selection` (ids, types, props and a screenshot with the selection boxed), `list_comments` (open ones by default, with a screenshot per slide), `reply_comment`, `resolve_comment`, `reopen_comment`.
+- Comments, drawings and selection live in their own store beside the deck, never in it, and no export carries them.
 
 ### 6. Present
 
 - Full-screen presenting in the browser.
-- Presenter view with notes, next slide and timer, kept in sync with the audience window, as `presenter.js` does today.
+- Presenter view with notes, next step, next slide and timer, kept in sync with the audience window, as `presenter.js` does today.
 
 ### 7. Export
 
 - **HTML**: one self-contained file per deck; effects play through the Web Animations API.
 - **PDF**: headless Chromium prints the same markup the screen shows; each slide in its final state, or one page per step.
-- **pptx**: typed blocks become native shapes and text boxes; masters become slide layouts; HTML, SVG and script blocks become images. Transitions and effects on typed blocks become native PowerPoint ones (`<p:transition>`, `<p:timing>`). An effect that targets the inside of an SVG block, and a Script block's own motion, are lost; the export lists each one it drops.
+- **pptx**: a new exporter, written from the plugin's python-pptx recipes (the plugin has recipes, not exporter code). It starts from a generated base file that holds the deck's masters and layouts, then adds slides with python-pptx. A block in a slot writes an empty shape box, so it inherits its place from the layout.
+  - Typed blocks become native text boxes, shapes, pictures and tables; a Chart block becomes a native chart from its table.
+  - decks writes its own OOXML for what python-pptx cannot: the layouts in the base file, the theme's colour scheme, SVG (a Chromium-made PNG with the SVG beside it, as PowerPoint 2019 and later read it), transitions (ms duration with a speed fallback) and effects (`<p:timing>`).
+  - HTML and Script blocks become images. An effect that targets the inside of an SVG block, and a Script block's own motion, are lost; the export lists each one it drops.
+  - Chromium (Playwright) does every rasterizing. No PyMuPDF (AGPL) and no CairoSVG (LGPL), which today's plugin exporter uses.
+  - Layouts and animations are checked in PowerPoint, never in LibreOffice: LibreOffice reads placeholders differently and has 27 open animation bugs.
 
 ### 8. MCP
 
-- Remote MCP server with OAuth, as Blattomat has.
-- Tools for decks, slides, blocks, animations, themes, masters and comments, all by id.
-- `render_slide` takes a step number, so the agent sees each step of a build.
-- `render_slide` returns a PNG so the agent sees what it built.
-- Each write answers with the problems it finds: overflowing text, overlapping text, text below the type floor (the hard gates H1, H2 and H7 from the `presentations` plugin).
+- Remote MCP server with OAuth, as Blattomat has. MCP is the agent's only write path.
+- Tools for decks, slides, blocks, animations, themes, masters, layouts and comments. Every write is an operation that names its target by id and sets single properties; no tool takes a list position.
+- **Locks hold**: a write that would change a locked block is refused, also when it comes as a whole-slide or whole-deck write.
+- **Versions**: every deck has a version number. A write names the version it read, and a write on an older version is refused with the current one.
+- **Undo**: each agent write is one undo step for the user, and its answer carries a short summary of what changed. The server keeps a log of operations.
+- `outline` returns, per slide, the title, the text and each block's id and type: a cheap read for agents, read only.
+- `render_slide` returns a PNG of a slide at a given step, so the agent sees what it built.
+- Each write answers with the problems it finds: overflowing text, overlapping text, text below the type floor (the hard gates H1, H2 and H7 from the `presentations` plugin), and a slide that is mostly raw blocks.
 - Agent docs in the repo, in the OKF format Blattomat uses (`docs/okf/`).
 
 ### 9. Storage and accounts
 
-- Decks saved on the server, automatically after each change.
+- Decks saved on the server after each operation.
 - A list of decks with title, date and a thumbnail.
 - Login and invite-only sign-up, as in Blattomat.
 
@@ -112,7 +145,7 @@ New decks use typed blocks first. Each write answers with a warning when a slide
 The code is public; the decks are not. Many decks hold client material.
 
 - Every deck, upload, theme, master, comment and export lives on the VPS data volume only, as in Blattomat. Nothing of it enters this repo, a GitHub issue, a pull request, a CI log or a container image.
-- Tests and fixtures use made-up decks only. No real deck, not even a slide of one, becomes a fixture or a screenshot in the repo.
+- Tests and fixtures use made-up decks only. No real deck, not even a slide of one, becomes a fixture or a screenshot in the repo. Research notes name no deck and no client; counts across decks are fine.
 - Every page and file sits behind the login; a request for someone else's deck gets a 404. Exports and uploads are served through the app after an owner check, never from a public path.
 - Feedback about the tool goes through the same privacy check as Blattomat's feedback job before anything reaches a public issue.
 - Backups go with the VPS's other data (server-infra `backup/`), not to GitHub.
@@ -124,6 +157,8 @@ The code is public; the decks are not. Many decks hold client material.
 - Library, search across decks, copy slides between decks (phase 2)
 - Import from pptx, PDF or Excel (phase 2); plugin HTML decks come in from v0, see 10
 - Drawing and bending a motion path by hand on the canvas: planned for v1. In v0 an agent writes the path through MCP and the editor shows and plays it
+- Morph transitions
+- A text form of the deck that can be edited and read back (the scan found no product that keeps one in step with a canvas); `outline` is read only
 - Mobile editing
 
 ## Architecture
@@ -131,13 +166,18 @@ The code is public; the decks are not. Many decks hold client material.
 | Part | Choice | Why |
 |---|---|---|
 | Frontend | TypeScript, React, Vite | As Blattomat; most of the canvas code ports over |
-| Canvas | Each block an HTML element placed in px on the 1920 by 1080 slide, scaled to fit; `moveable` and `selecto` for drag, resize and select | The same markup draws the editor, the presentation and the PDF |
-| Text field | ProseMirror for the text being edited | As Blattomat |
+| Canvas | Each block an HTML element placed in px on the 1920 by 1080 slide, scaled to fit | The same markup draws the editor, the presentation and the PDF. tldraw, Pitch and Google Slides draw DOM or SVG too |
+| Drag, resize, select | `moveable` and `selecto` (MIT), kept behind one module of decks' own; vendored or forked | No release since 2023-12 and no answer from the author; Blattomat's editor already works around them in at least ten places |
+| Text field | ProseMirror for the text being edited; text stored as runs it can load | As Blattomat |
 | Raw blocks | HTML and SVG inline; Script blocks in a sandboxed `iframe` | A script must not reach the editor or the session |
-| Backend | FastAPI | As Blattomat |
-| Storage | SQLite; a deck is one JSON document | A few users; Postgres when it outgrows that |
-| PDF | Playwright and Chromium, print URL with a signed short-lived token | As Blattomat |
-| pptx | Port of the exporter in the `presentations` plugin, from JSON instead of from HTML | JSON blocks map almost one to one onto pptx shapes |
+| Backend | FastAPI | As Blattomat; python-pptx is Python |
+| Writes | The server applies operations in order, checks locks, versions and cascades (deleting a block deletes its effects), then bumps the deck version | How Figma, tldraw sync and Linear order writes. No CRDT: a CRDT merges where decks must refuse |
+| Storage | SQLite; a deck is one JSON document; comments in their own table | A few users; Postgres when it outgrows that |
+| PDF and images | Playwright and Chromium, print URL with a signed short-lived token | As Blattomat; also rasterizes for pptx |
+| pptx | python-pptx (MIT), pinned, plus decks' own OOXML writers | The mature writer, but no commits since 2024-08; decks owns the rest |
+| Charts | ECharts (Apache-2.0; ship its NOTICE), SVG in the browser and in the PDF | Takes the block's table as it is; the same table makes the native pptx chart |
+
+Not used: tldraw. Its LICENSE allows no production use without a paid key, and its model has no masters, layouts or placeholders.
 
 ### Units
 
@@ -147,55 +187,55 @@ Lengths in px on a 1920 by 1080 slide, font sizes in px. A 16:9 pptx slide is 12
 
 ```json
 {
+  "schema": 1,
   "id": "d_7Kq2",
+  "version": 42,
   "title": "Example talk",
-  "theme": "t_deloitte",
-  "slides": [
-    {
-      "id": "s_a91F",
-      "master": "m_title_body",
+  "theme": "t_example",
+  "slides": {
+    "s_a91F": {
+      "order": "a0",
+      "layout": "l_title_body",
       "notes": "Open with the question, not the answer.",
       "hidden": false,
-      "blocks": [
-        { "id": "b_x3", "type": "text", "slot": "title",
-          "x": 96, "y": 80, "w": 1728, "h": 120, "z": 1, "locked": false,
-          "props": { "text": "Why decks as code" } },
-        { "id": "b_y8", "type": "svg",
-          "x": 960, "y": 260, "w": 864, "h": 700, "z": 2, "locked": false,
-          "props": { "svg": "<svg viewBox=\"0 0 864 700\">…</svg>" } }
-      ],
       "transition": { "effect": "fade", "ms": 400 },
-      "animations": [
-        { "id": "a_1", "block": "b_y8", "kind": "in", "effect": "fade",
+      "blocks": {
+        "b_x3": { "type": "text", "slot": "title", "order": "a0",
+          "x": 96, "y": 80, "w": 1728, "h": 120, "locked": false,
+          "props": { "paragraphs": [{ "runs": [{ "text": "Why decks as code" }] }] } },
+        "b_y8": { "type": "svg", "order": "a1",
+          "x": 960, "y": 260, "w": 864, "h": 700, "locked": false,
+          "props": { "svg": "<svg viewBox=\"0 0 864 700\">…</svg>" } }
+      },
+      "animations": {
+        "a_1": { "order": "a0", "block": "b_y8", "kind": "in", "effect": "fade",
           "start": "click", "ms": 500, "delay": 0 },
-        { "id": "a_2", "block": "b_y8", "target": "#arrow-2", "kind": "in", "effect": "wipe",
-          "from": "left", "start": "after", "ms": 300, "delay": 0 }
-      ]
+        "a_2": { "order": "a1", "block": "b_y8", "target": "#arrow-2", "kind": "in",
+          "effect": "wipe", "from": "left", "start": "after", "ms": 300, "delay": 0 }
+      }
     }
-  ]
+  }
 }
 ```
 
-`animations` is the slide's timeline, in play order. Each effect names its block by id, so moving or restyling a block keeps its effects; deleting a block deletes them.
+Slides, blocks and animations are maps keyed by id. Their order is the `order` string, a fractional index (rocicorp's `fractional-indexing`, CC0): the slide list for slides, stacking for blocks (later lies on top), play order for animations. Inserting between two items makes a key between theirs, so no other item changes. The client makes ids and keys; the server removes a duplicate key. Nothing in the document is derived: thumbnails, warnings and computed text heights live outside it.
 
-A block with `slot` fills that placeholder of the slide's master and takes its box from the master unless it sets its own. Comments live beside the deck, not in it: each names its slide and block ids, and an export never carries them. Themes and masters are documents of their own, named by id, so many decks share one.
+`schema` is the document format's version, for migrations; `version` counts the writes.
 
-Slides and blocks are a list in the JSON, but every operation names them by `id`, never by their place in the list. This keeps live collaboration, agent branches and slide copy open for later.
+Themes, masters and layouts are documents of their own, named by id, so many decks share one. Comments live in their own table.
 
 ## What to port
 
 | From | What |
 |---|---|
-| Blattomat (`~/Code/blattwerk`) | canvas: drag, resize, snap, guides, multi-select, undo (`frontend/src/`); ProseMirror text field; Playwright PDF (`src/blattwerk/pdf.py`); invite-only accounts (`auth.py`); remote MCP with OAuth (`remote.py`, `oauth.py`); OKF agent docs (`docs/okf/`); feedback job (`scripts/feedback-*`); deploy (`.github/workflows/deploy.yml`, server-infra `deploy/`) |
-| `presentations` plugin (`~/Code/pgoell-claude-tools/plugins/presentations`) | `deck-stage.js`, presenter view (`presenter.js`, `presenter.html`); pptx exporter (`exporting-presentations-to-pptx`); presets and `extracting-presets`; hard gates H1, H2, H7 |
+| Blattomat (`~/Code/blattwerk`) | canvas: drag, resize, snap, guides, multi-select, undo (`frontend/src/`), with moveable moved behind one module on the way; ProseMirror text field; Playwright PDF (`src/blattwerk/pdf.py`); invite-only accounts (`auth.py`); remote MCP with OAuth and its lock refusal (`remote.py`, `oauth.py`); OKF agent docs (`docs/okf/`); feedback job (`scripts/feedback-*`); deploy (`.github/workflows/deploy.yml`, server-infra `deploy/`) |
+| Blattomat gaps to close in the port | its lock refusal does not cover whole-document writes (`replace_doc`); agent writes are not undo steps for the user |
+| `presentations` plugin (`~/Code/pgoell-claude-tools/plugins/presentations`) | `deck-stage.js`, presenter view (`presenter.js`, `presenter.html`); the python-pptx recipes and gotchas (`exporting-presentations-to-pptx/references/python-pptx-recipes.md`) as the basis of a new exporter; presets and `extracting-presets`; hard gates H1, H2, H7 |
 
-## Open questions for the competitor scan
+## Open items
 
-1. Draw the canvas as HTML elements (Blattomat, Pitch) or on a canvas library such as tldraw? Check tldraw's license by reading its LICENSE file, not a badge or a summary.
-2. How do Google Slides, Pitch and PowerPoint model masters, layouts and placeholders, and what of that must the JSON hold for the pptx export to give real layouts?
-3. How does Slidev (Markdown) let an agent write slides, and is a text form of the deck worth having beside the JSON?
-4. How do Gamma and Pitch let an AI change a deck: whole deck, one slide, one block? What does it do to blocks the user placed by hand?
-5. Which libraries for pptx export and for charts fit, and what are their licenses?
-6. How do PowerPoint (`<p:timing>`), Keynote, Google Slides, reveal.js and Slidev model animations and builds, and which effects survive the trip to pptx and back?
-7. How do Figma, Google Slides and Pitch anchor comments to objects, and how do Gamma and Pitch let a user point their AI at one element?
-8. What would live collaboration need from the model now (Yjs, Automerge), so v0 does not block it?
+1. **Layouts in PowerPoint**: generate a pptx from a base file with real layouts, open it in PowerPoint, try Change Layout and Reset. The design in section 3 is a hypothesis until this passes. First test issue.
+2. **Preset ids**: check each effect of section 4 in PowerPoint before it ships.
+3. **python-pptx**: pinned for now; decide to vendor or fork once a bug in it blocks decks.
+4. **Licences**: neither this repo nor Blattomat has a LICENSE file. Choose one for decks, and settle Blattomat's (blattwerk issue #889) before its code moves here.
+5. **Deloitte**: check the employment contract and Deloitte's IP policy before anything is built for Deloitte to host (see [idea.md](idea.md)).
