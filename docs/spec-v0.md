@@ -98,10 +98,10 @@ The fastest way to tell an agent what to change is to point at it. Modelled on t
 
 ### 10. Import of the existing decks
 
-The decks the `presentations` plugin built (`~/Code/presentations`) come in from v0, in two layers:
+The decks the `presentations` plugin built (`~/Code/presentations`) come in from v0. v0 carries the wrap; the rebuild is an agent's job, through the MCP tools v0 already has.
 
-- **Wrap**: each slide of a plugin deck becomes one HTML block filling the slide, with the deck's stylesheet, assets and speaker notes. Lossless: the slide looks as it did. It can be presented, commented and searched at once, but not dragged.
-- **Rebuild**: an agent turns a wrapped slide into typed blocks through MCP, slide by slide, when the user wants to edit it. An OKF recipe in the agent docs says how. The wrapped slide stays as a hidden copy until the user accepts the rebuild.
+- **Wrap** (v0 code): each slide of a plugin deck becomes one HTML block filling the slide, with the deck's stylesheet, assets and speaker notes. Lossless: the slide looks as it did. It can be presented, commented and searched at once, but not dragged.
+- **Rebuild** (an agent, no v0 code): when the user wants to edit a wrapped slide, an agent turns it into typed blocks through MCP. An OKF recipe in the agent docs says how. Undo brings the wrapped slide back.
 
 No converter code turns arbitrary flex or grid layout into boxes.
 
