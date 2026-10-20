@@ -148,7 +148,7 @@ Lengths in px on a 1920 by 1080 slide, font sizes in px. A 16:9 pptx slide is 12
 ```json
 {
   "id": "d_7Kq2",
-  "title": "Presentations as code",
+  "title": "Example talk",
   "theme": "t_deloitte",
   "slides": [
     {
