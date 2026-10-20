@@ -90,7 +90,7 @@ Part of the model from the first version, so no deck has to be rebuilt to gain t
 - Live collaboration, workspaces, version branches (phase 3)
 - Library, search across decks, copy slides between decks (phase 2)
 - Import from pptx, PDF or Excel (phase 2)
-- Drawing a motion path by hand on the canvas (an agent writes the path through MCP; the editor shows it)
+- Drawing and bending a motion path by hand on the canvas: planned for v1. In v0 an agent writes the path through MCP and the editor shows and plays it
 - Mobile editing
 
 ## Architecture
