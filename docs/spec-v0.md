@@ -6,7 +6,7 @@ A slide editor: a 16:9 canvas like PowerPoint, typed blocks plus raw HTML, SVG a
 
 ## Who it is for
 
-One user first: Pascal, who gives talks at Deloitte and to clients. Today an agent builds each deck as HTML with the `presentations` plugin; the decks live in `~/Code/presentations`. He edits by hand when the agent gets a detail wrong, and wants to show the agent a layout by placing boxes rather than describing it.
+One user first: Pascal, who gives talks at Deloitte and to clients. Today an agent builds each deck as HTML with the `presentations` plugin; the decks live in `~/Code/presentations`. He edits by hand when the agent gets a detail wrong, and wants to show the agent a layout by placing boxes rather than describing it. He wants every deck in one hosted place, open from any device, whichever agent built it: Claude Code, claude.ai or another MCP client. The local deck editor cannot do that, because it serves one file from one checkout to an agent in the same checkout.
 
 ## The test
 

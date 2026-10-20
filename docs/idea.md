@@ -12,6 +12,8 @@ Today an agent writes each deck as hand-made HTML and CSS (`~/Code/presentations
 - Showing the agent what you want ("this box goes there") means describing it in words, because nothing can be dragged freely. The current deck editor only edits text, reorders siblings and shifts an element with `translate`.
 - While drafting the storyline you already want to sketch how each slide is laid out, before any slide is built.
 
+Fixing the editor alone does not solve it. Decks today are files in one checkout, edited through a local server, by an agent working in that checkout. The goal is one place that holds every deck, open from any device, and reachable by any agent that builds one (Claude Code, claude.ai, or another agent through MCP), with the same document whoever wrote it.
+
 A personal asset first: every future talk is made here. Later maybe a tool Deloitte teams host for themselves.
 
 ## The wish list
