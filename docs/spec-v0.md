@@ -59,27 +59,38 @@ Part of the model from the first version, so no deck has to be rebuilt to gain t
 - **Editor**: an animation panel per slide lists the effects in order. Drag to reorder, set start, effect, duration and delay, play the slide from any step. Numbered badges on the canvas show which step each block appears on.
 - **Present**: each click plays the next step; back undoes it. The presenter view's preview shows the next step, not only the next slide.
 
-### 5. Present
+### 5. Feedback for agents
+
+The fastest way to tell an agent what to change is to point at it. Modelled on the comments of the current deck editor (`editing-presentations`), but tied to ids instead of source lines, so a comment still finds its block after edits.
+
+- **Comment**: select one or more blocks (or nothing, for the whole slide), type a note. A comment can also name an animation step.
+- **Draw**: a pen on the slide for circles and arrows. A drawing belongs to its comment and never enters the deck.
+- **Threads**: the agent answers under a comment and marks it done; the user reopens it if the change is wrong.
+- **Selection**: what the user has selected right now is readable by the agent, so "make this bigger" needs no comment at all.
+- **Copy prompt**: all open comments as one markdown prompt on the clipboard, per slide a screenshot path with each commented block boxed and numbered, and per comment the note, the block ids, their type and props. For agents without MCP.
+- **MCP**: `get_selection`, `list_comments` (open ones by default, with a screenshot per slide), `reply_comment`, `resolve_comment`. An agent works through the open comments and resolves each with a reply on what it changed.
+
+### 6. Present
 
 - Full-screen presenting in the browser.
 - Presenter view with notes, next slide and timer, kept in sync with the audience window, as `presenter.js` does today.
 
-### 6. Export
+### 7. Export
 
 - **HTML**: one self-contained file per deck; effects play through the Web Animations API.
 - **PDF**: headless Chromium prints the same markup the screen shows; each slide in its final state, or one page per step.
 - **pptx**: typed blocks become native shapes and text boxes; masters become slide layouts; HTML, SVG and script blocks become images. Transitions and effects on typed blocks become native PowerPoint ones (`<p:transition>`, `<p:timing>`). An effect that targets the inside of an SVG block, and a Script block's own motion, are lost; the export lists each one it drops.
 
-### 7. MCP
+### 8. MCP
 
 - Remote MCP server with OAuth, as Blattomat has.
-- Tools for decks, slides, blocks, animations, themes and masters, all by id.
+- Tools for decks, slides, blocks, animations, themes, masters and comments, all by id.
 - `render_slide` takes a step number, so the agent sees each step of a build.
 - `render_slide` returns a PNG so the agent sees what it built.
 - Each write answers with the problems it finds: overflowing text, overlapping text, text below the type floor (the hard gates H1, H2 and H7 from the `presentations` plugin).
 - Agent docs in the repo, in the OKF format Blattomat uses (`docs/okf/`).
 
-### 8. Storage and accounts
+### 9. Storage and accounts
 
 - Decks saved on the server, automatically after each change.
 - A list of decks with title, date and a thumbnail.
@@ -145,7 +156,7 @@ Lengths in px on a 1920 by 1080 slide, font sizes in px. A 16:9 pptx slide is 12
 
 `animations` is the slide's timeline, in play order. Each effect names its block by id, so moving or restyling a block keeps its effects; deleting a block deletes them.
 
-A block with `slot` fills that placeholder of the slide's master and takes its box from the master unless it sets its own. Themes and masters are documents of their own, named by id, so many decks share one.
+A block with `slot` fills that placeholder of the slide's master and takes its box from the master unless it sets its own. Comments live beside the deck, not in it: each names its slide and block ids, and an export never carries them. Themes and masters are documents of their own, named by id, so many decks share one.
 
 Slides and blocks are a list in the JSON, but every operation names them by `id`, never by their place in the list. This keeps live collaboration, agent branches and slide copy open for later.
 
@@ -164,4 +175,5 @@ Slides and blocks are a list in the JSON, but every operation names them by `id`
 4. How do Gamma and Pitch let an AI change a deck: whole deck, one slide, one block? What does it do to blocks the user placed by hand?
 5. Which libraries for pptx export and for charts fit, and what are their licenses?
 6. How do PowerPoint (`<p:timing>`), Keynote, Google Slides, reveal.js and Slidev model animations and builds, and which effects survive the trip to pptx and back?
-7. What would live collaboration need from the model now (Yjs, Automerge), so v0 does not block it?
+7. How do Figma, Google Slides and Pitch anchor comments to objects, and how do Gamma and Pitch let a user point their AI at one element?
+8. What would live collaboration need from the model now (Yjs, Automerge), so v0 does not block it?

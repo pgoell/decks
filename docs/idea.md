@@ -21,6 +21,7 @@ A personal asset first: every future talk is made here. Later maybe a tool Deloi
 - A canvas like PowerPoint: drag, resize, snap, align, multi-select, undo.
 - Typed blocks (text, bullets, image, table, chart, shape) and raw blocks (HTML, SVG, JavaScript), so nothing a hand-written deck can do is lost. A raw SVG block moves as one box in the editor while the agent rewrites what is inside.
 - Rough layout while drafting: empty boxes with a note for the agent.
+- Feedback the agent can read: select blocks, comment and draw, then copy everything as one prompt or let the agent read it through MCP.
 
 ### Look
 
