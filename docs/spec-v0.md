@@ -96,11 +96,33 @@ The fastest way to tell an agent what to change is to point at it. Modelled on t
 - A list of decks with title, date and a thumbnail.
 - Login and invite-only sign-up, as in Blattomat.
 
+### 10. Import of the existing decks
+
+The decks the `presentations` plugin built (`~/Code/presentations`) come in from v0, in two layers:
+
+- **Wrap**: each slide of a plugin deck becomes one HTML block filling the slide, with the deck's stylesheet, assets and speaker notes. Lossless: the slide looks as it did. It can be presented, commented and searched at once, but not dragged.
+- **Rebuild**: an agent turns a wrapped slide into typed blocks through MCP, slide by slide, when the user wants to edit it. An OKF recipe in the agent docs says how. The wrapped slide stays as a hidden copy until the user accepts the rebuild.
+
+No converter code turns arbitrary flex or grid layout into boxes.
+
+New decks use typed blocks first. Each write answers with a warning when a slide is mostly raw HTML, SVG or Script blocks.
+
+### 11. Privacy
+
+The code is public; the decks are not. Many decks hold client material.
+
+- Every deck, upload, theme, master, comment and export lives on the VPS data volume only, as in Blattomat. Nothing of it enters this repo, a GitHub issue, a pull request, a CI log or a container image.
+- Tests and fixtures use made-up decks only. No real deck, not even a slide of one, becomes a fixture or a screenshot in the repo.
+- Every page and file sits behind the login; a request for someone else's deck gets a 404. Exports and uploads are served through the app after an owner check, never from a public path.
+- Feedback about the tool goes through the same privacy check as Blattomat's feedback job before anything reaches a public issue.
+- Backups go with the VPS's other data (server-infra `backup/`), not to GitHub.
+- Content does leave the VPS when an agent reads a deck through MCP: it goes to that agent's model provider. Which agents may connect is the user's choice per OAuth grant.
+
 ## Not in v0
 
 - Live collaboration, workspaces, version branches (phase 3)
 - Library, search across decks, copy slides between decks (phase 2)
-- Import from pptx, PDF or Excel (phase 2)
+- Import from pptx, PDF or Excel (phase 2); plugin HTML decks come in from v0, see 10
 - Drawing and bending a motion path by hand on the canvas: planned for v1. In v0 an agent writes the path through MCP and the editor shows and plays it
 - Mobile editing
 

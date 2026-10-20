@@ -47,7 +47,7 @@ A personal asset first: every future talk is made here. Later maybe a tool Deloi
 
 ### People
 
-- Self-hosted, as Blattomat is.
+- Self-hosted, as Blattomat is. The code is public; every deck stays private on the VPS, since many hold client material.
 - Workspaces.
 - Collaborative editing, with people and agents in the same deck at once.
 - Version history and branches: an agent works on its own copy, a person accepts or rejects its changes slide by slide.
